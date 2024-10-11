@@ -1,0 +1,17 @@
+DECLARE PLUGIN "coqtwee.plugin"
+
+{
+
+open Pp
+open Ltac_plugin
+
+}
+
+VERNAC COMMAND EXTEND HelloWorld CLASSIFIED AS QUERY
+| [ "HelloWorld" ] -> { Feedback.msg_notice (strbrk Main.message) }
+END
+
+TACTIC EXTEND hello
+| [ "hello_world" ] -> { Proofview.tclUNIT (Feedback.msg_notice (strbrk Main.message)) }
+END
+  

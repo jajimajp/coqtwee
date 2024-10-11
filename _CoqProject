@@ -1,0 +1,11 @@
+src/META.coqtwee
+-R theories/ CoqTwee
+-I src
+
+theories/Loader.v
+
+src/main.ml
+src/main.mli
+src/g_syntax.mlg
+src/coqtwee.mlpack
+

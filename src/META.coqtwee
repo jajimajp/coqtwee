@@ -1,0 +1,11 @@
+package "plugin" (
+    directory = "."
+    version = "dev"
+    description = "Equational theorem proving plugin using twee"
+    requires = "coq-core.plugins.ltac"
+    archive(byte) = "coqtwee.cma"
+    archive(native) = "coqtwee.cmxa"
+    plugin(byte) = "coqtwee.cma"
+    plugin(native) = "coqtwee.cmxs"
+)
+directory = "."
