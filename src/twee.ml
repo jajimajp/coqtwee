@@ -89,6 +89,222 @@ and rewrite = term * tactic
 
 and tactic =
   | ByAxiom of id * string * bool (* (id, name, left_to_right?) *)
+[@@deriving_inline show]
+
+let _ = fun (_ : output) -> ()
+let _ = fun (_ : entry) -> ()
+let _ = fun (_ : id) -> ()
+let _ = fun (_ : eq) -> ()
+let _ = fun (_ : term) -> ()
+let _ = fun (_ : proof) -> ()
+let _ = fun (_ : rewrite) -> ()
+let _ = fun (_ : tactic) -> ()
+let rec pp_output
+  : Ppx_deriving_runtime.Format.formatter ->
+      output -> Ppx_deriving_runtime.unit
+  =
+  ((let __0 = pp_entry in
+    ((let open! ((Ppx_deriving_runtime)[@ocaml.warning "-A"]) in
+        fun fmt ->
+          fun x ->
+            Ppx_deriving_runtime.Format.fprintf fmt "@[<2>[";
+            ignore
+              (List.fold_left
+                 (fun sep ->
+                    fun x ->
+                      if sep
+                      then Ppx_deriving_runtime.Format.fprintf fmt ";@ ";
+                      (__0 fmt) x;
+                      true) false x);
+            Ppx_deriving_runtime.Format.fprintf fmt "@,]@]")
+      [@ocaml.warning "-A"]))
+  [@ocaml.warning "-39"])
+and show_output : output -> Ppx_deriving_runtime.string =
+  fun x -> Ppx_deriving_runtime.Format.asprintf "%a" pp_output x[@@ocaml.warning
+                                                                  "-32"]
+and pp_entry
+  : Ppx_deriving_runtime.Format.formatter ->
+      entry -> Ppx_deriving_runtime.unit
+  =
+  ((let __4 = pp_proof
+    and __3 = pp_eq
+    and __2 = pp_id
+    and __1 = pp_eq
+    and __0 = pp_id in
+    ((let open! ((Ppx_deriving_runtime)[@ocaml.warning "-A"]) in
+        fun fmt ->
+          function
+          | Axiom (a0, a1, a2) ->
+              (Ppx_deriving_runtime.Format.fprintf fmt "(@[<2>Twee.Axiom (@,";
+               (((__0 fmt) a0;
+                 Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+                 (Ppx_deriving_runtime.Format.fprintf fmt "%S") a1);
+                Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+                (__1 fmt) a2);
+               Ppx_deriving_runtime.Format.fprintf fmt "@,))@]")
+          | Goal (a0, a1, a2, a3) ->
+              (Ppx_deriving_runtime.Format.fprintf fmt "(@[<2>Twee.Goal (@,";
+               ((((__2 fmt) a0;
+                  Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+                  (Ppx_deriving_runtime.Format.fprintf fmt "%S") a1);
+                 Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+                 (__3 fmt) a2);
+                Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+                (__4 fmt) a3);
+               Ppx_deriving_runtime.Format.fprintf fmt "@,))@]"))
+      [@ocaml.warning "-A"]))
+  [@ocaml.warning "-39"])
+and show_entry : entry -> Ppx_deriving_runtime.string =
+  fun x -> Ppx_deriving_runtime.Format.asprintf "%a" pp_entry x[@@ocaml.warning
+                                                                 "-32"]
+and pp_id
+  : Ppx_deriving_runtime.Format.formatter -> id -> Ppx_deriving_runtime.unit
+  =
+  ((let open! ((Ppx_deriving_runtime)[@ocaml.warning "-A"]) in
+      fun fmt -> Ppx_deriving_runtime.Format.fprintf fmt "%d")
+  [@ocaml.warning "-39"][@ocaml.warning "-A"])
+and show_id : id -> Ppx_deriving_runtime.string =
+  fun x -> Ppx_deriving_runtime.Format.asprintf "%a" pp_id x[@@ocaml.warning
+                                                              "-32"]
+and pp_eq
+  : Ppx_deriving_runtime.Format.formatter -> eq -> Ppx_deriving_runtime.unit
+  =
+  ((let __1 = pp_term
+    and __0 = pp_term in
+    ((let open! ((Ppx_deriving_runtime)[@ocaml.warning "-A"]) in
+        fun fmt ->
+          fun (a0, a1) ->
+            Ppx_deriving_runtime.Format.fprintf fmt "(@[";
+            ((__0 fmt) a0;
+             Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+             (__1 fmt) a1);
+            Ppx_deriving_runtime.Format.fprintf fmt "@])")
+      [@ocaml.warning "-A"]))
+  [@ocaml.warning "-39"])
+and show_eq : eq -> Ppx_deriving_runtime.string =
+  fun x -> Ppx_deriving_runtime.Format.asprintf "%a" pp_eq x[@@ocaml.warning
+                                                              "-32"]
+and pp_term
+  : Ppx_deriving_runtime.Format.formatter ->
+      term -> Ppx_deriving_runtime.unit
+  =
+  ((let __0 = pp_term in
+    ((let open! ((Ppx_deriving_runtime)[@ocaml.warning "-A"]) in
+        fun fmt ->
+          function
+          | Var a0 ->
+              (Ppx_deriving_runtime.Format.fprintf fmt "(@[<2>Twee.Var@ ";
+               (Ppx_deriving_runtime.Format.fprintf fmt "%S") a0;
+               Ppx_deriving_runtime.Format.fprintf fmt "@])")
+          | App (a0, a1) ->
+              (Ppx_deriving_runtime.Format.fprintf fmt "(@[<2>Twee.App (@,";
+               ((Ppx_deriving_runtime.Format.fprintf fmt "%S") a0;
+                Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+                ((fun x ->
+                    Ppx_deriving_runtime.Format.fprintf fmt "@[<2>[";
+                    ignore
+                      (List.fold_left
+                         (fun sep ->
+                            fun x ->
+                              if sep
+                              then
+                                Ppx_deriving_runtime.Format.fprintf fmt ";@ ";
+                              (__0 fmt) x;
+                              true) false x);
+                    Ppx_deriving_runtime.Format.fprintf fmt "@,]@]")) a1);
+               Ppx_deriving_runtime.Format.fprintf fmt "@,))@]"))
+      [@ocaml.warning "-A"]))
+  [@ocaml.warning "-39"])
+and show_term : term -> Ppx_deriving_runtime.string =
+  fun x -> Ppx_deriving_runtime.Format.asprintf "%a" pp_term x[@@ocaml.warning
+                                                                "-32"]
+and pp_proof
+  : Ppx_deriving_runtime.Format.formatter ->
+      proof -> Ppx_deriving_runtime.unit
+  =
+  ((let __1 = pp_rewrite
+    and __0 = pp_term in
+    ((let open! ((Ppx_deriving_runtime)[@ocaml.warning "-A"]) in
+        fun fmt ->
+          fun (a0, a1) ->
+            Ppx_deriving_runtime.Format.fprintf fmt "(@[";
+            ((__0 fmt) a0;
+             Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+             ((fun x ->
+                 Ppx_deriving_runtime.Format.fprintf fmt "@[<2>[";
+                 ignore
+                   (List.fold_left
+                      (fun sep ->
+                         fun x ->
+                           if sep
+                           then Ppx_deriving_runtime.Format.fprintf fmt ";@ ";
+                           (__1 fmt) x;
+                           true) false x);
+                 Ppx_deriving_runtime.Format.fprintf fmt "@,]@]")) a1);
+            Ppx_deriving_runtime.Format.fprintf fmt "@])")
+      [@ocaml.warning "-A"]))
+  [@ocaml.warning "-39"])
+and show_proof : proof -> Ppx_deriving_runtime.string =
+  fun x -> Ppx_deriving_runtime.Format.asprintf "%a" pp_proof x[@@ocaml.warning
+                                                                 "-32"]
+and pp_rewrite
+  : Ppx_deriving_runtime.Format.formatter ->
+      rewrite -> Ppx_deriving_runtime.unit
+  =
+  ((let __1 = pp_tactic
+    and __0 = pp_term in
+    ((let open! ((Ppx_deriving_runtime)[@ocaml.warning "-A"]) in
+        fun fmt ->
+          fun (a0, a1) ->
+            Ppx_deriving_runtime.Format.fprintf fmt "(@[";
+            ((__0 fmt) a0;
+             Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+             (__1 fmt) a1);
+            Ppx_deriving_runtime.Format.fprintf fmt "@])")
+      [@ocaml.warning "-A"]))
+  [@ocaml.warning "-39"])
+and show_rewrite : rewrite -> Ppx_deriving_runtime.string =
+  fun x -> Ppx_deriving_runtime.Format.asprintf "%a" pp_rewrite x[@@ocaml.warning
+                                                                   "-32"]
+and pp_tactic
+  : Ppx_deriving_runtime.Format.formatter ->
+      tactic -> Ppx_deriving_runtime.unit
+  =
+  ((let __0 = pp_id in
+    ((let open! ((Ppx_deriving_runtime)[@ocaml.warning "-A"]) in
+        fun fmt ->
+          function
+          | ByAxiom (a0, a1, a2) ->
+              (Ppx_deriving_runtime.Format.fprintf fmt
+                 "(@[<2>Twee.ByAxiom (@,";
+               (((__0 fmt) a0;
+                 Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+                 (Ppx_deriving_runtime.Format.fprintf fmt "%S") a1);
+                Ppx_deriving_runtime.Format.fprintf fmt ",@ ";
+                (Ppx_deriving_runtime.Format.fprintf fmt "%B") a2);
+               Ppx_deriving_runtime.Format.fprintf fmt "@,))@]"))
+      [@ocaml.warning "-A"]))
+  [@ocaml.warning "-39"])
+and show_tactic : tactic -> Ppx_deriving_runtime.string =
+  fun x -> Ppx_deriving_runtime.Format.asprintf "%a" pp_tactic x[@@ocaml.warning
+                                                                  "-32"]
+let _ = pp_output
+and _ = show_output
+and _ = pp_entry
+and _ = show_entry
+and _ = pp_id
+and _ = show_id
+and _ = pp_eq
+and _ = show_eq
+and _ = pp_term
+and _ = show_term
+and _ = pp_proof
+and _ = show_proof
+and _ = pp_rewrite
+and _ = show_rewrite
+and _ = pp_tactic
+and _ = show_tactic
+[@@@deriving.end]
 
 
 let rec string_of_term = function

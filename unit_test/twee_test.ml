@@ -33,41 +33,77 @@ Proof:
 |}
 
 let%expect_test "parse_goal" =
-  let string_of_tactic = function
-    | ByAxiom (id, rule, l2r) -> Printf.sprintf "axiom %d (%s) %s" id rule 
-      (if l2r then "->" else "<-") in
   (match parse_goal (String.split_on_char '\n' goal) with
-  | Ok (Goal (id, name, eq, (fst_term, rewrites)), lines) ->
-    Printf.printf "Goal %d (%s): %s = %s.\n" id name (string_of_term (fst eq)) (string_of_term (snd eq));
-    Printf.printf "Proof:\n";
-    Printf.printf "  %s\n" (string_of_term fst_term);
-    List.iter (fun (term, tactic) ->
-      Printf.printf "= { by %s }\n" (string_of_tactic tactic);
-      Printf.printf "  %s\n" (string_of_term term)
-    ) rewrites
-  | Ok _ -> assert false
+  | Ok (entry, lines) ->
+    print_endline (show_entry entry)
   | Error msg -> prerr_endline msg
   );
   [%expect {|
-    Goal 1 (left_inverse): f<i<x>, x> = e.
-    Proof:
-      f<i<x>, x>
-    = { by axiom 1 (right_identity) <- }
-      f<f<i<x>, x>, e>
-    = { by axiom 2 (right_inverse) <- }
-      f<f<i<x>, x>, f<i<x>, i<i<x>>>>
-    = { by axiom 3 (associativity) <- }
-      f<i<x>, f<x, f<i<x>, i<i<x>>>>>
-    = { by axiom 3 (associativity) -> }
-      f<i<x>, f<f<x, i<x>>, i<i<x>>>>
-    = { by axiom 2 (right_inverse) -> }
-      f<i<x>, f<e, i<i<x>>>>
-    = { by axiom 3 (associativity) -> }
-      f<f<i<x>, e>, i<i<x>>>
-    = { by axiom 1 (right_identity) -> }
-      f<i<x>, i<i<x>>>
-    = { by axiom 2 (right_inverse) -> }
-      e |}]
+    (Twee.Goal (1, "left_inverse",
+       ((Twee.App ("f", [(Twee.App ("i", [(Twee.Var "x")])); (Twee.Var "x")])),
+        (Twee.Var "e")),
+       ((Twee.App ("f", [(Twee.App ("i", [(Twee.Var "x")])); (Twee.Var "x")])),
+        [((Twee.App ("f",
+             [(Twee.App ("f",
+                 [(Twee.App ("i", [(Twee.Var "x")])); (Twee.Var "x")]));
+               (Twee.Var "e")]
+             )),
+          (Twee.ByAxiom (1, "right_identity", false)));
+          ((Twee.App ("f",
+              [(Twee.App ("f",
+                  [(Twee.App ("i", [(Twee.Var "x")])); (Twee.Var "x")]));
+                (Twee.App ("f",
+                   [(Twee.App ("i", [(Twee.Var "x")]));
+                     (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
+                   ))
+                ]
+              )),
+           (Twee.ByAxiom (2, "right_inverse", false)));
+          ((Twee.App ("f",
+              [(Twee.App ("i", [(Twee.Var "x")]));
+                (Twee.App ("f",
+                   [(Twee.Var "x");
+                     (Twee.App ("f",
+                        [(Twee.App ("i", [(Twee.Var "x")]));
+                          (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
+                        ))
+                     ]
+                   ))
+                ]
+              )),
+           (Twee.ByAxiom (3, "associativity", false)));
+          ((Twee.App ("f",
+              [(Twee.App ("i", [(Twee.Var "x")]));
+                (Twee.App ("f",
+                   [(Twee.App ("f",
+                       [(Twee.Var "x"); (Twee.App ("i", [(Twee.Var "x")]))]));
+                     (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
+                   ))
+                ]
+              )),
+           (Twee.ByAxiom (3, "associativity", true)));
+          ((Twee.App ("f",
+              [(Twee.App ("i", [(Twee.Var "x")]));
+                (Twee.App ("f",
+                   [(Twee.Var "e");
+                     (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
+                   ))
+                ]
+              )),
+           (Twee.ByAxiom (2, "right_inverse", true)));
+          ((Twee.App ("f",
+              [(Twee.App ("f",
+                  [(Twee.App ("i", [(Twee.Var "x")])); (Twee.Var "e")]));
+                (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
+              )),
+           (Twee.ByAxiom (3, "associativity", true)));
+          ((Twee.App ("f",
+              [(Twee.App ("i", [(Twee.Var "x")]));
+                (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
+              )),
+           (Twee.ByAxiom (1, "right_identity", true)));
+          ((Twee.Var "e"), (Twee.ByAxiom (2, "right_inverse", true)))])
+       )) |}]
 
 let example : Tptp.t =
   let open Tptp in
