@@ -67,6 +67,163 @@ module Tptp = struct
 end
 
 
+type output = entry list
+
+and entry =
+  | Axiom of id * string * eq
+  | Goal of id * string * eq * proof
+
+and id = int
+
+and eq = term * term
+
+and term =
+  | Var of string
+  | App of string * term list
+
+and proof = term * rewrite list
+(** Proof. (start_term, rewrite list) *)
+
+and rewrite = term * tactic
+(** Rewrite step. (next_term, to) *)
+
+and tactic =
+  | ByAxiom of id * string * bool (* (id, name, left_to_right?) *)
+
+
+let rec string_of_term = function
+  | Var v -> v
+  | App (f, args) ->
+    f ^ "<" ^ (List.map string_of_term args |> String.concat ", ") ^ ">"
+
+
+exception Parse_proof_error of string
+
+
+let rec parse_output (lines : string list) : (output, string) result =
+  match lines with [] -> Error "Empty output from twee" |
+  fst :: lines ->
+  
+  if fst <> "The conjecture is true! Here is a proof." then
+    Error ("Proof failed: " ^ fst)
+  else
+  
+  let rec parse_entries (acc : entry list) (lines : string list) : (entry list, string) result =
+    match lines with
+    | [] -> Error "Unexpected end of entry"
+    | fst :: lines ->
+      let fst_word = String.split_on_char ' ' fst |> List.hd in
+      match fst_word with
+      | "" -> parse_entries acc lines
+      | "RESULT:" -> Ok (List.rev acc)
+      | "Axiom" -> ((* Assume this entry needs only one line *)
+        match parse_axiom fst with
+        | Ok entry -> parse_entries (entry :: acc) lines
+        | Error msg -> Error msg
+      )
+      | "Goal" -> (
+        match parse_goal (fst :: lines) with
+        | Ok (entry, lines) -> parse_entries (entry :: acc) lines
+        | Error msg -> Error msg
+      )
+      | _ -> Error ("Unexpected entry: " ^ fst) in
+  
+  parse_entries [] lines
+    
+(* Example: "Axiom 1 (right_identity): f(X, e) = X." *)
+and parse_axiom (line : string) : (entry, string) result =
+  let regexp = Str.regexp "Axiom \\([0-9]+\\) (\\([^:]+\\)): \\([^.]*\\)\\." in
+  if not (Str.string_match regexp line 0) then
+    Error ("Invalid axiom: " ^ line)
+  else
+  let id = Str.matched_group 1 line |> int_of_string in
+  let name = Str.matched_group 2 line in
+  let eq = Str.matched_group 3 line |> parse_eq in
+  Ok (Axiom (id, name, eq))
+
+and parse_eq (s : string) : eq =
+  match String.split_on_char '=' s |> List.map String.trim with
+  | [l; r] -> (parse_term l, parse_term r)
+  | _ -> raise (Invalid_argument "Invalid equation")
+
+and parse_term (s : string) : term =
+  try
+    let i = String.index s '(' in
+    let f = String.sub s 0 i |> String.trim in
+    if f = "" then raise (Invalid_argument "Empty function name") else
+    let s = String.sub s (i + 1) (String.length s - i - 1) in
+    let args = String.split_on_char ')' s |> List.rev |> List.tl |> List.rev |> String.concat ")" in
+    let args = args |> split_args |> List.map parse_term in
+    App (f, args)
+  with Not_found ->
+    Var (String.trim s)
+
+(** split strings by comma only if it is not inside parentheses *)
+and split_args (s : string) : string list =
+  let rec aux (depth : int) (reading : string) (acc : string list) (s : string) : string list =
+    if s = "" then List.rev (reading :: acc) else
+    let c = String.get s 0 in
+    let s = String.sub s 1 (String.length s - 1) in
+    match c with
+    | '(' -> aux (depth + 1) (reading ^ "(") acc s
+    | ')' -> aux (depth - 1) (reading ^ ")") acc s
+    | ',' when depth = 0 -> aux depth "" (reading :: acc) s
+    | _ -> aux depth (reading ^ String.make 1 c) acc s in 
+  aux 0 "" [] s
+
+(** Example: "Goal 1 (left_inverse): f(i(x), x) = e." *)
+and parse_goal (lines : string list) : (entry * string list, string) result =
+  let line = List.hd lines in
+  let regexp = Str.regexp "Goal \\([0-9]+\\) (\\([^:]+\\)): \\([^.]*\\)\\." in
+  if not (Str.string_match regexp line 0) then
+    Error ("Invalid goal: " ^ line)
+  else
+  let id = Str.matched_group 1 line |> int_of_string in
+  let name = Str.matched_group 2 line in
+  let eq = Str.matched_group 3 line |> parse_eq in
+  let lines = List.tl lines in
+  match parse_proof lines with
+  | Ok (proof, lines) -> Ok (Goal (id, name, eq, proof), lines)
+  | Error msg -> Error msg
+
+
+and parse_proof (lines : string list) : (proof * string list, string) result =
+  match lines with [] -> Error "Unexpected end of proof"
+  | fst :: lines ->
+    if fst <> "Proof:" then Error ("Invalid proof: " ^ fst) else
+    let consume_term_line (lines : string list) : term * string list =
+      match lines with [] -> raise (Parse_proof_error "Unexpected end of proof")
+      | fst :: lines ->
+        let term = parse_term fst in
+        (term, lines) in
+    
+    let fst_term, lines = consume_term_line lines in
+
+    let rec aux (acc : rewrite list) (lines : string list) : (rewrite list * string list, string) result =
+      match lines with [] -> Error "Unexpected end of proof"
+      | fst :: snd :: lines ->
+        if fst = "" then Ok (List.rev acc, lines) else
+        let tactic = parse_tactic fst in
+        let next_term = parse_term snd in
+        aux ((next_term, tactic) :: acc) lines
+      | _ -> Error "Unexpected end of proof" in
+    
+    match aux [] lines with
+    | Ok (rewrites, lines) -> Ok ((fst_term, rewrites), lines)
+    | Error msg -> Error msg
+
+(* example: "= { by axiom 1 (right_identity) R->L }", "R->L" may be absent *)
+and parse_tactic (line : string) : tactic =
+  let regexp = Str.regexp "= { by axiom \\([0-9]+\\) (\\([^)]+\\))\\( R->L\\)? }" in
+  if not (Str.string_match regexp line 0) then
+    raise (Invalid_argument ("Invalid tactic: " ^ line))
+  else
+  let id = Str.matched_group 1 line |> int_of_string in
+  let name = Str.matched_group 2 line in
+  let r2l = try ignore (Str.matched_group 3 line); true with Not_found -> false in
+  ByAxiom (id, name, not r2l)
+  
+
 let twee (input : string) : string list =
   let (in_channel, out_channel, err_in_channel) =
     open_process_args_full "twee" [|"twee"; "-"; "--quiet"; "--no-colour"|] [||] in
