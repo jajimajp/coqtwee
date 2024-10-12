@@ -1,7 +1,6 @@
 (library
  (name coqtwee)
- (public_name coqtwee)
- (libraries coq-core.plugins.ltac))
+ (public_name coqtwee.plugin)
+ (libraries coq-core.plugins.ltac str unix))
 
 (coq.pp (modules g_syntax))
-
