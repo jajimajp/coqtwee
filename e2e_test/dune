@@ -1,0 +1,5 @@
+(coq.theory
+ (name e2e_tests)
+ (package coqtwee)
+ (plugins coqtwee.plugin))
+
