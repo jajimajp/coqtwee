@@ -35,75 +35,20 @@ Proof:
 let%expect_test "parse_goal" =
   (match parse_goal (String.split_on_char '\n' goal) with
   | Ok (entry, lines) ->
-    print_endline (show_entry entry)
+    print_endline (string_of_entry entry)
   | Error msg -> prerr_endline msg
   );
   [%expect {|
-    (Twee.Goal (1, "left_inverse",
-       ((Twee.App ("f", [(Twee.App ("i", [(Twee.Var "x")])); (Twee.Var "x")])),
-        (Twee.Var "e")),
-       ((Twee.App ("f", [(Twee.App ("i", [(Twee.Var "x")])); (Twee.Var "x")])),
-        [((Twee.App ("f",
-             [(Twee.App ("f",
-                 [(Twee.App ("i", [(Twee.Var "x")])); (Twee.Var "x")]));
-               (Twee.Var "e")]
-             )),
-          (Twee.ByAxiom (1, "right_identity", false)));
-          ((Twee.App ("f",
-              [(Twee.App ("f",
-                  [(Twee.App ("i", [(Twee.Var "x")])); (Twee.Var "x")]));
-                (Twee.App ("f",
-                   [(Twee.App ("i", [(Twee.Var "x")]));
-                     (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
-                   ))
-                ]
-              )),
-           (Twee.ByAxiom (2, "right_inverse", false)));
-          ((Twee.App ("f",
-              [(Twee.App ("i", [(Twee.Var "x")]));
-                (Twee.App ("f",
-                   [(Twee.Var "x");
-                     (Twee.App ("f",
-                        [(Twee.App ("i", [(Twee.Var "x")]));
-                          (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
-                        ))
-                     ]
-                   ))
-                ]
-              )),
-           (Twee.ByAxiom (3, "associativity", false)));
-          ((Twee.App ("f",
-              [(Twee.App ("i", [(Twee.Var "x")]));
-                (Twee.App ("f",
-                   [(Twee.App ("f",
-                       [(Twee.Var "x"); (Twee.App ("i", [(Twee.Var "x")]))]));
-                     (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
-                   ))
-                ]
-              )),
-           (Twee.ByAxiom (3, "associativity", true)));
-          ((Twee.App ("f",
-              [(Twee.App ("i", [(Twee.Var "x")]));
-                (Twee.App ("f",
-                   [(Twee.Var "e");
-                     (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
-                   ))
-                ]
-              )),
-           (Twee.ByAxiom (2, "right_inverse", true)));
-          ((Twee.App ("f",
-              [(Twee.App ("f",
-                  [(Twee.App ("i", [(Twee.Var "x")])); (Twee.Var "e")]));
-                (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
-              )),
-           (Twee.ByAxiom (3, "associativity", true)));
-          ((Twee.App ("f",
-              [(Twee.App ("i", [(Twee.Var "x")]));
-                (Twee.App ("i", [(Twee.App ("i", [(Twee.Var "x")]))]))]
-              )),
-           (Twee.ByAxiom (1, "right_identity", true)));
-          ((Twee.Var "e"), (Twee.ByAxiom (2, "right_inverse", true)))])
-       )) |}]
+    Goal 1 (left_inverse): f<i<x>, x> = e
+    f<i<x>, x>
+    = { by axiom 1 (right_identity) R->L } f<f<i<x>, x>, e>
+    = { by axiom 2 (right_inverse) R->L } f<f<i<x>, x>, f<i<x>, i<i<x>>>>
+    = { by axiom 3 (associativity) R->L } f<i<x>, f<x, f<i<x>, i<i<x>>>>>
+    = { by axiom 3 (associativity) } f<i<x>, f<f<x, i<x>>, i<i<x>>>>
+    = { by axiom 2 (right_inverse) } f<i<x>, f<e, i<i<x>>>>
+    = { by axiom 3 (associativity) } f<f<i<x>, e>, i<i<x>>>
+    = { by axiom 1 (right_identity) } f<i<x>, i<i<x>>>
+    = { by axiom 2 (right_inverse) } e |}]
 
 let example : Tptp.t =
   let open Tptp in
@@ -134,34 +79,22 @@ let%expect_test "Tptp.to_string" =
     fof(left_inverse, conjecture, ![X]: f(i(X), X) = e).|}]
 
 let%expect_test "twee" =
-  let content = Tptp.to_string example in
-  let lines = twee content in
-  List.iter print_endline lines;
+  (match twee example with
+  | Error msg -> prerr_endline msg
+  | Ok output ->
+    print_endline (string_of_output output)
+  );
   [%expect {|
-    The conjecture is true! Here is a proof.
-
-    Axiom 1 (right_identity): f(X, e) = X.
-    Axiom 2 (right_inverse): f(X, i(X)) = e.
-    Axiom 3 (associativity): f(X, f(Y, Z)) = f(f(X, Y), Z).
-
-    Goal 1 (left_inverse): f(i(x), x) = e.
-    Proof:
-      f(i(x), x)
-    = { by axiom 1 (right_identity) R->L }
-      f(f(i(x), x), e)
-    = { by axiom 2 (right_inverse) R->L }
-      f(f(i(x), x), f(i(x), i(i(x))))
-    = { by axiom 3 (associativity) R->L }
-      f(i(x), f(x, f(i(x), i(i(x)))))
-    = { by axiom 3 (associativity) }
-      f(i(x), f(f(x, i(x)), i(i(x))))
-    = { by axiom 2 (right_inverse) }
-      f(i(x), f(e, i(i(x))))
-    = { by axiom 3 (associativity) }
-      f(f(i(x), e), i(i(x)))
-    = { by axiom 1 (right_identity) }
-      f(i(x), i(i(x)))
-    = { by axiom 2 (right_inverse) }
-      e
-
-    RESULT: Theorem (the conjecture is true). |}]
+    Axiom 1 (right_identity): f<X, e> = X
+    Axiom 2 (right_inverse): f<X, i<X>> = e
+    Axiom 3 (associativity): f<X, f<Y, Z>> = f<f<X, Y>, Z>
+    Goal 1 (left_inverse): f<i<x>, x> = e
+    f<i<x>, x>
+    = { by axiom 1 (right_identity) R->L } f<f<i<x>, x>, e>
+    = { by axiom 2 (right_inverse) R->L } f<f<i<x>, x>, f<i<x>, i<i<x>>>>
+    = { by axiom 3 (associativity) R->L } f<i<x>, f<x, f<i<x>, i<i<x>>>>>
+    = { by axiom 3 (associativity) } f<i<x>, f<f<x, i<x>>, i<i<x>>>>
+    = { by axiom 2 (right_inverse) } f<i<x>, f<e, i<i<x>>>>
+    = { by axiom 3 (associativity) } f<f<i<x>, e>, i<i<x>>>
+    = { by axiom 1 (right_identity) } f<i<x>, i<i<x>>>
+    = { by axiom 2 (right_inverse) } e |}]
