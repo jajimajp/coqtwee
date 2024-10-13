@@ -5,6 +5,7 @@ src/META.coqtwee
 theories/Loader.v
 
 src/twee.ml
+src/twee.mli
 src/main.ml
 src/main.mli
 src/g_syntax.mlg
