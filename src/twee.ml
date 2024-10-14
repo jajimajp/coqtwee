@@ -112,6 +112,7 @@ type output = entry list
 
 and entry =
   | Axiom of id * string * eq
+  | Lemma of id * eq * proof
   | Goal of id * string * eq * proof
 
 and id = int
@@ -138,6 +139,8 @@ let rec string_of_output (output : output) : string =
 and string_of_entry = function
   | Axiom (id, name, eq) ->
     Printf.sprintf "Axiom %d (%s): %s = %s" id name (string_of_term (fst eq)) (string_of_term (snd eq))
+  | Lemma (id, eq, proof) ->
+    Printf.sprintf "Lemma %d: %s = %s\n%s" id (string_of_term (fst eq)) (string_of_term (snd eq)) (string_of_proof proof)
   | Goal (id, name, eq, proof) ->
     Printf.sprintf "Goal %d (%s): %s = %s\n%s" id name (string_of_term (fst eq)) (string_of_term (snd eq)) (string_of_proof proof)
 
@@ -234,6 +237,22 @@ and split_args (s : string) : string list =
     | ',' when depth = 0 -> aux depth "" (reading :: acc) s
     | _ -> aux depth (reading ^ String.make 1 c) acc s in 
   aux 0 "" [] s
+
+
+(** Example: "Lemma 4: f(i(X), f(X, Y)) = Y." *)
+and parse_lemma (lines : string list) : (entry * string list, string) result =
+  let line = List.hd lines in
+  let regexp = Str.regexp "Lemma \\([0-9]+\\): \\([^.]*\\)\\." in
+  if not (Str.string_match regexp line 0) then
+    Error ("Invalid lemma: " ^ line)
+  else
+  let id = Str.matched_group 1 line |> int_of_string in
+  let eq = Str.matched_group 2 line |> parse_eq in
+  let lines = List.tl lines in
+  match parse_proof lines with
+  | Ok (proof, lines) -> Ok (Lemma (id, eq, proof), lines)
+  | Error msg -> Error msg
+
 
 (** Example: "Goal 1 (left_inverse): f(i(x), x) = e." *)
 and parse_goal (lines : string list) : (entry * string list, string) result =

@@ -9,6 +9,35 @@ let%expect_test "parse_axiom" =
   );
   [%expect {| Axiom 1 (right_identity): f<X, e> = f<X, f<Y, Z>> |}]
 
+
+let lemma =
+  {|Lemma 4: f(i(X), f(X, Y)) = Y.
+Proof:
+  f(i(X), f(X, Y))
+= { by axiom 3 (associativity) }
+  f(f(i(X), X), Y)
+= { by axiom 2 (left_inverse) }
+  f(e, Y)
+= { by axiom 1 (left_identity) }
+  Y
+
+|}
+
+
+let%expect_test "parse_lemma" =
+  (match parse_lemma (String.split_on_char '\n' lemma) with
+  | Ok (entry, lines) ->
+    print_endline (string_of_entry entry)
+  | Error msg -> prerr_endline msg
+  );
+  [%expect {|
+    Lemma 4: f<i<X>, f<X, Y>> = Y
+    f<i<X>, f<X, Y>>
+    = { by axiom 3 (associativity) } f<f<i<X>, X>, Y>
+    = { by axiom 2 (left_inverse) } f<e, Y>
+    = { by axiom 1 (left_identity) } Y |}]
+
+
 let goal =
   {|Goal 1 (left_inverse): f(i(x), x) = e.
 Proof:

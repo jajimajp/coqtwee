@@ -48,6 +48,7 @@ type output = entry list
 
 and entry =
   | Axiom of id * string * eq
+  | Lemma of id * eq * proof
   | Goal of id * string * eq * proof
 
 and id = int
@@ -91,3 +92,4 @@ val twee : Tptp.t -> (output, string) result
 
 val parse_axiom : string -> (entry, string) result
 val parse_goal : string list -> (entry * string list, string) result
+val parse_lemma : string list -> (entry * string list, string) result
