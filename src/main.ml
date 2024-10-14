@@ -36,7 +36,6 @@ let econstr_of_twee_eq (env : Environ.env) (sigma : Evd.evar_map) (set : Libname
                   (fun name ->
                     CAst.make (Names.Name.mk_name (Names.Id.of_string name)))
                   univ_qunrs,
-                None,
                 Default Explicit,
                 CAst.make (CRef (set, None)) );
           ],

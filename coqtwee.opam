@@ -10,7 +10,7 @@ doc: "https://github.com/jajimajp/coqtwee"
 bug-reports: "https://github.com/jajimajp/coqtwee/issues"
 depends: [
   "ocaml"
-  "dune" {>= "3.16"}
+  "dune" {>= "3.14"}
   "odoc" {with-doc}
 ]
 build: [
