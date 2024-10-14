@@ -2,7 +2,7 @@ src/META.coqtwee
 -R theories/ CoqTwee
 -I src
 
-theories/Loader.v
+theories/Twee.v
 
 src/coqutil.ml
 src/twee.ml

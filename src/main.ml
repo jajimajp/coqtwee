@@ -78,7 +78,11 @@ exception Inner_proof_failed (* Recoverable error *)
 let prove_with_twee_proof (env : Environ.env) (sigma : Evd.evar_map) (proof : Twee.proof) : unit Proofview.tactic =
   let (_term, rewrites) = proof in
   let finalizer : unit Proofview.tactic =
-    Proofview.tclPROGRESS (Tactics.intros_reflexivity) in
+    Proofview.tclIFCATCH
+      (Proofview.tclPROGRESS (Tactics.intros_reflexivity))
+      (fun _ -> Feedback.msg_debug Pp.(str "Succeed (refl) " ++ str (Twee.string_of_term _term)) |> Proofview.tclUNIT)
+      (fun _ -> Feedback.msg_debug Pp.(str "Failed (refl) " ++ str (Twee.string_of_term _term)); Proofview.tclZERO (Inner_proof_failed))
+    in
   let rewrites =
     rewrites
     |> List.rev (* List.fold_right is not tail-rec, so use rev + fold_left *)
@@ -115,18 +119,19 @@ let prove_with_twee_proof (env : Environ.env) (sigma : Evd.evar_map) (proof : Tw
           (Proofview.tclTHEN
             (Proofview.tclIFCATCH 
               (rewrite_single_at at)
-              (fun _ -> Feedback.msg_debug Pp.(str "Succeed (out) " ++ str (Twee.string_of_term term)) |> Proofview.tclUNIT)
-              (fun _ -> Feedback.msg_debug Pp.(str "Failed (out) " ++ str (Twee.string_of_term term)); Proofview.tclZERO (Outer_proof_failed)))
+              (fun _ -> Proofview.tclUNIT ())
+              (fun _ -> Proofview.tclZERO (Outer_proof_failed)))
             (Proofview.tclIFCATCH
               rest_tacs
-              (fun _ -> Feedback.msg_debug Pp.(str "Succeed (in) " ++ str (Twee.string_of_term term)) |> Proofview.tclUNIT)
-              (fun _ -> Feedback.msg_debug Pp.(str "Failed (in) " ++ str (Twee.string_of_term term)); Proofview.tclZERO (Inner_proof_failed))))
-          (fun _ -> Feedback.msg_debug Pp.(str "Succeed (tot) " ++ str (Twee.string_of_term term)) |> Proofview.tclUNIT)
+              (fun _ -> Proofview.tclUNIT ())
+              (fun _ -> Proofview.tclZERO (Inner_proof_failed))))
+          (fun _ -> Proofview.tclUNIT ())
           (fun (exn, _) ->
-            Feedback.msg_debug Pp.(str "Failed (tot) " ++ str (Twee.string_of_term term));
+            Feedback.msg_debug Pp.(str "Failed (in) " ++ str (Twee.string_of_term term));
             match exn with
             | Outer_proof_failed -> Proofview.tclZERO Outer_proof_failed
-            | Inner_proof_failed -> rewrite (at + 1)) in
+            | Inner_proof_failed -> rewrite (at + 1)
+            | _ -> Proofview.tclZERO Outer_proof_failed) in
       
       rewrite 1) finalizer in
   rewrites

@@ -37,6 +37,7 @@ let label_of_constr (constr : Constr.t) : string =
   | Int       _ ->  "Int       "
   | Float     _ ->  "Float     "
   | Array     _ ->  "Array     "
+  | String    _ ->  "String    "
 
 let destruct_eq (constr : Constr.t) : Constr.t * Constr.t =
   let open Constr in

@@ -6,7 +6,7 @@ This plugin utilizez [twee](https://nick8325.github.io/twee/), an equational the
 ## Example
 
 ```coq
-From CoqTwee Require Import Loader.
+From CoqTwee Require Import Twee.
 
 Parameter G : Set.
 Parameter O : G.
@@ -40,7 +40,7 @@ make && make install
 ```bash
 coqtop
 
-Coq < From CoqTwee Require Import Loader.
+Coq < From CoqTwee Require Import Twee.
 [Loading ML file coqtwee.plugin ... done]
 
 Coq < HelloWorld.
