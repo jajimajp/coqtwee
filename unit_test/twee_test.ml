@@ -79,6 +79,63 @@ let%expect_test "parse_goal" =
     = { by axiom 1 (right_identity) } f<i<x>, i<i<x>>>
     = { by axiom 2 (right_inverse) } e |}]
 
+
+let output : string =
+  {|The conjecture is true! Here is a proof.
+
+Axiom 1 (left_identity): f(e, X) = X.
+Axiom 2 (left_inverse): f(i(X), X) = e.
+Axiom 3 (associativity): f(X, f(Y, Z)) = f(f(X, Y), Z).
+
+Lemma 4: f(i(X), f(X, Y)) = Y.
+Proof:
+  f(i(X), f(X, Y))
+= { by axiom 3 (associativity) }
+  f(f(i(X), X), Y)
+= { by axiom 2 (left_inverse) }
+  f(e, Y)
+= { by axiom 1 (left_identity) }
+  Y
+
+Goal 1 (goal): f(x, e) = x.
+Proof:
+  f(x, e)
+= { by lemma 4 R->L }
+  f(i(i(x)), f(i(x), f(x, e)))
+= { by lemma 4 }
+  f(i(i(x)), e)
+= { by axiom 2 (left_inverse) R->L }
+  f(i(i(x)), f(i(x), x))
+= { by lemma 4 }
+  x
+
+RESULT: Theorem (the conjecture is true).
+|}
+
+let%expect_test "parse_output" =
+  let output = String.split_on_char '\n' output in
+  (match parse_output output with
+  | Error msg -> prerr_endline msg
+  | Ok entries ->
+    List.iter (fun entry -> print_endline (string_of_entry entry)) entries
+  );
+  [%expect {|
+    Axiom 1 (left_identity): f<e, X> = X
+    Axiom 2 (left_inverse): f<i<X>, X> = e
+    Axiom 3 (associativity): f<X, f<Y, Z>> = f<f<X, Y>, Z>
+    Lemma 4: f<i<X>, f<X, Y>> = Y
+    f<i<X>, f<X, Y>>
+    = { by axiom 3 (associativity) } f<f<i<X>, X>, Y>
+    = { by axiom 2 (left_inverse) } f<e, Y>
+    = { by axiom 1 (left_identity) } Y
+    Goal 1 (goal): f<x, e> = x
+    f<x, e>
+    = { by lemma 4 R->L } f<i<i<x>>, f<i<x>, f<x, e>>>
+    = { by lemma 4 } f<i<i<x>>, e>
+    = { by axiom 2 (left_inverse) R->L } f<i<i<x>>, f<i<x>, x>>
+    = { by lemma 4 } x |}]
+
+
 let example : Tptp.t =
   let open Tptp in
   let const name = T (name, []) in

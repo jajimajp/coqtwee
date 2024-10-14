@@ -131,6 +131,7 @@ and rewrite = term * tactic
 
 and tactic =
   | ByAxiom of id * string * bool (* (id, name, left_to_right?) *)
+  | ByLemma of int * bool (** (id, left_to_right?) *)
 
 
 let rec string_of_output (output : output) : string =
@@ -162,6 +163,8 @@ and string_of_rewrite (next_term, tactic) =
 and string_of_tactic = function
   | ByAxiom (id, name, l2r) ->
     Printf.sprintf "axiom %d (%s)%s" id name (if l2r then "" else " R->L")
+  | ByLemma (id, l2r) ->
+    Printf.sprintf "lemma %d%s" id (if l2r then "" else " R->L")
 
 
 exception Parse_proof_error of string
@@ -186,6 +189,11 @@ let rec parse_output (lines : string list) : (output, string) result =
       | "Axiom" -> ((* Assume this entry needs only one line *)
         match parse_axiom fst with
         | Ok entry -> parse_entries (entry :: acc) lines
+        | Error msg -> Error msg
+      )
+      | "Lemma" -> (
+        match parse_lemma (fst :: lines) with
+        | Ok (entry, lines) -> parse_entries (entry :: acc) lines
         | Error msg -> Error msg
       )
       | "Goal" -> (
@@ -297,14 +305,32 @@ and parse_proof (lines : string list) : (proof * string list, string) result =
 
 (* example: "= { by axiom 1 (right_identity) R->L }", "R->L" may be absent *)
 and parse_tactic (line : string) : tactic =
+  match accept_tactic_by_axiom line with
+  | Some tactic -> tactic
+  | None ->
+
+  match accept_tactic_by_lemma line with
+  | Some tactic -> tactic
+  | None -> raise (Parse_proof_error ("Invalid tactic: " ^ line))
+  
+and accept_tactic_by_axiom (line : string) : tactic option =
   let regexp = Str.regexp "= { by axiom \\([0-9]+\\) (\\([^)]+\\))\\( R->L\\)? }" in
   if not (Str.string_match regexp line 0) then
-    raise (Invalid_argument ("Invalid tactic: " ^ line))
+    None
   else
   let id = Str.matched_group 1 line |> int_of_string in
   let name = Str.matched_group 2 line in
   let r2l = try ignore (Str.matched_group 3 line); true with Not_found -> false in
-  ByAxiom (id, name, not r2l)
+  Some (ByAxiom (id, name, not r2l))
+
+and accept_tactic_by_lemma (line : string) : tactic option =
+  let regexp = Str.regexp "= { by lemma \\([0-9]+\\)\\( R->L\\)? }" in
+  if not (Str.string_match regexp line 0) then
+    None
+  else
+  let id = Str.matched_group 1 line |> int_of_string in
+  let r2l = try ignore (Str.matched_group 2 line); true with Not_found -> false in
+  Some (ByLemma (id, not r2l))
   
 
 let twee (input : Tptp.t) : (output, string) result =

@@ -67,6 +67,7 @@ and rewrite = term * tactic
 
 and tactic =
   | ByAxiom of int * string * bool (** (id, name, left_to_right?) *)
+  | ByLemma of int * bool (** (id, left_to_right?) *)
 
 
 (** {2 String conversions} *)
@@ -93,3 +94,4 @@ val twee : Tptp.t -> (output, string) result
 val parse_axiom : string -> (entry, string) result
 val parse_goal : string list -> (entry * string list, string) result
 val parse_lemma : string list -> (entry * string list, string) result
+val parse_output : string list -> (output, string) result
