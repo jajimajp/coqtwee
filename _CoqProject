@@ -5,7 +5,6 @@ src/META.coqtwee
 theories/Loader.v
 
 src/coqutil.ml
-src/coqutil.mli
 src/twee.ml
 src/twee.mli
 src/prover.ml
