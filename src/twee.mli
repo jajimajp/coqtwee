@@ -26,6 +26,14 @@ module Tptp : sig
   and 'a with_univ_qunr = string list * 'a
   (** Universal quantifiers *)
 
+  (** {3 Sanitizer} *)
+
+  val sanitize : t -> t * (string * string) list
+  (** Sanitizes the given TPTP clauses.
+      First element of the tuple is the sanitized clauses.
+      Second element of the tuple is the mapping from original names to sanitized names.
+      NOTE: Unchanged names are not included in the mapping.  *)
+
   (** {3 String conversions} *)
 
   val to_string : t -> string

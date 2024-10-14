@@ -2,16 +2,17 @@ DECLARE PLUGIN "coqtwee.plugin"
 
 {
 
-open Pp
 open Ltac_plugin
+open Stdarg
 
 }
 
-VERNAC COMMAND EXTEND HelloWorld CLASSIFIED AS QUERY
-| [ "HelloWorld" ] -> { Feedback.msg_notice (strbrk Main.message) }
+VERNAC COMMAND EXTEND TweeDoctor CLASSIFIED AS QUERY
+| [ "TweeDoctor" ] -> { Main.twee_doctor () }
 END
 
-TACTIC EXTEND hello
-| [ "hello_world" ] -> { Proofview.tclUNIT (Feedback.msg_notice (strbrk Main.message)) }
+TACTIC EXTEND twee
+| [ "twee" reference_list(axioms) ] -> { Main.twee axioms }
 END
+
   

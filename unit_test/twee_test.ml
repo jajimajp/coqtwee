@@ -69,6 +69,45 @@ let example : Tptp.t =
       With_univ (["X"], (f (i x) x) = e))
   ]
 
+let dirty_example : Tptp.t =
+  let open Tptp in
+  let const name = T (name, []) in
+  let app name args = T (name, args) in
+  let e = const "e2e_tests.Twee.e" in
+  let x, y, z = const "X", const "Y", const "Z" in
+  let i v = app "e2e_tests.Twee.i" [v] in
+  let f l r = app "e2e_tests.Twee.f" [l; r] in
+  let (=) l r = (l, r) in
+  [ ("e2e_tests.Twee.right_identity", Axiom,
+      With_univ (["X"], (f x e) = x))
+  ; ("e2e_tests.Twee.right_inverse", Axiom,
+      With_univ (["X"], (f x (i x)) = e))
+  ; ("e2e_tests.Twee.associativity", Axiom,
+      With_univ (["X"; "Y"; "Z"], (f x (f y z)) = (f (f x y) z)))
+  ; ("left_inverse", Conjecture,
+      With_univ (["X"], (f (i x) x) = e))
+  ]
+
+let%expect_test "Tptp.sanitize" =
+  let sanitized, mapping = Tptp.sanitize dirty_example in
+  print_endline "[Sanitized TPTP]";
+  print_endline (Tptp.to_string sanitized);
+  print_endline "[Mapping]";
+  List.iter (fun (k, v) -> Printf.printf "%s -> %s\n" k v) mapping; 
+  [%expect {|
+    [Sanitized TPTP]
+    fof(right_identity, axiom, ![X]: f(X, e) = X).
+    fof(right_inverse, axiom, ![X]: f(X, i(X)) = e).
+    fof(associativity, axiom, ![X,Y,Z]: f(X, f(Y, Z)) = f(f(X, Y), Z)).
+    fof(left_inverse, conjecture, ![X]: f(i(X), X) = e).
+    [Mapping]
+    e2e_tests.Twee.associativity -> associativity
+    e2e_tests.Twee.i -> i
+    e2e_tests.Twee.right_inverse -> right_inverse
+    e2e_tests.Twee.e -> e
+    e2e_tests.Twee.f -> f
+    e2e_tests.Twee.right_identity -> right_identity |}]
+
 let%expect_test "Tptp.to_string" =
   let content = Tptp.to_string example in
   print_endline content;

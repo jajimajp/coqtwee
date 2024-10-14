@@ -1,7 +1,6 @@
 (library
  (name coqtwee)
  (public_name coqtwee.plugin)
- (lint (pps ppx_deriving.show))
- (libraries coq-core.plugins.ltac str unix ppx_deriving))
+ (libraries coq-core.plugins.ltac str unix))
 
 (coq.pp (modules g_syntax))

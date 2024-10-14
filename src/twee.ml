@@ -34,6 +34,54 @@ module Tptp = struct
   and term = T of string * term list
   and 'a with_univ_qunr = string list * 'a
 
+  let rec sanitize t =
+    let clauses, mapping = List.fold_left (fun (sanitized_cls, mapping) clause ->
+      let clause, mapping = sanitize_clause mapping clause in
+      ((clause :: sanitized_cls, mapping))) ([], []) t in
+    (List.rev clauses, mapping)
+
+  and sanitize_clause mapping (name, clause_type, clause_term) =
+    let name, mapping = sanitize_name mapping name in
+    let clause_term, mapping = match clause_term with
+      | Eq eq ->
+        let eq, mapping = sanitize_eq mapping eq in
+          Eq eq, mapping
+      | With_univ (univs, eq) ->
+          let eq, mapping = sanitize_eq mapping eq in
+          With_univ (univs, eq), mapping in
+    (name, clause_type, clause_term), mapping
+
+  and sanitize_eq mapping (l, r) =
+    let l, mapping = sanitize_term mapping l in
+    let r, mapping = sanitize_term mapping r in
+    (l, r), mapping
+
+  and sanitize_term mapping = function
+    | T (name, []) ->
+      let name, mapping = sanitize_name mapping name in
+      T (name, []), mapping
+    | T (name, terms) ->
+      let name, mapping = sanitize_name mapping name in
+      let terms, mapping = List.fold_left (fun (terms, mapping) term ->
+        let term, mapping = sanitize_term mapping term in
+        (term :: terms, mapping)) ([], mapping) terms in
+      T (name, List.rev terms), mapping
+
+  and sanitize_name mapping name =
+    try
+      let v = List.assoc name mapping in
+      (v, mapping)
+    with Not_found ->
+      begin
+        try
+          let _idx = String.index name '.' in
+          let last = String.split_on_char '.' name |> List.rev |> List.hd in
+          let mapping = (name, last) :: mapping in
+          (last, mapping)
+        with Not_found -> (name, mapping)
+      end
+    
+
   let rec to_string t =
     List.map string_of_clause t
     |> String.concat "\n" 
@@ -117,8 +165,8 @@ exception Parse_proof_error of string
 
 
 let rec parse_output (lines : string list) : (output, string) result =
-  match lines with [] -> Error "Empty output from twee" |
-  fst :: lines ->
+  match lines with [] -> Error "Empty output from twee."
+  | fst :: lines ->
   
   if fst <> "The conjecture is true! Here is a proof." then
     Error ("Proof failed: " ^ fst)
@@ -246,6 +294,15 @@ let twee (input : Tptp.t) : (output, string) result =
     open_process_args_full "twee" [|"twee"; "-"; "--quiet"; "--no-colour"|] [||] in
   output_string out_channel input;
   close_out out_channel;
+
+  begin try
+    while true do
+      Feedback.msg_debug Pp.(str "twee stderr" ++ spc() ++ str (input_line err_in_channel))
+    done
+  with
+  | End_of_file -> ()
+  end;
+
   close_in err_in_channel;
   let lines = ref [] in
   begin try
