@@ -19,10 +19,12 @@ Axiom associativity : forall X Y Z, f X (f Y Z) = f (f X Y) Z.
 
 Goal forall a b, f a b = a -> b = O.
 Proof.
-  intros.
-  twee plus_zero minus_left associativity H.
+  intros a b h.
+  twee plus_zero minus_left associativity h.
 Qed.
 ```
+
+See [./e2e_test](./e2e_test) for more examples.
 
 ## Requirement
 
@@ -33,18 +35,6 @@ Qed.
 
 ```bash
 make && make install
-```
-
-## Usage
-
-```bash
-coqtop
-
-Coq < From CoqTwee Require Import Twee.
-[Loading ML file coqtwee.plugin ... done]
-
-Coq < HelloWorld.
-Hello, world!
 ```
 
 ## Development
