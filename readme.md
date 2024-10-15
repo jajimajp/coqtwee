@@ -7,6 +7,7 @@ This plugin utilizez [twee](https://nick8325.github.io/twee/), an equational the
 
 ```coq
 From CoqTwee Require Import Twee.
+Require Import Setoid.
 
 Parameter G : Set.
 Parameter O : G.
